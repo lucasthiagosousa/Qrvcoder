@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "Code": {
+      "title": "GeneratedCode",
+      "description": "Represents a generated QR/Barcode configuration",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "qr_content": { "type": "string" },
+        "barcode_content": { "type": "string" },
+        "barcode_type": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["title", "qr_content", "userId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "codes/{codeId}": {
+      "schema": { "$ref": "#/entities/Code" },
+      "description": "Stores user generated codes"
+    }
+  }
+}

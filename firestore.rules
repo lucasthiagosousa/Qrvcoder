@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidCode(data) {
+      return data.keys().hasAll(['title', 'qr_content', 'userId', 'createdAt', 'updatedAt']) &&
+             data.keys().size() >= 5 && data.keys().size() <= 8 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.qr_content is string && data.qr_content.size() > 0 && data.qr_content.size() <= 2000 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.createdAt is number &&
+             data.updatedAt is number &&
+             ( !('barcode_content' in data) || (data.barcode_content is string && data.barcode_content.size() <= 200) ) &&
+             ( !('barcode_type' in data) || (data.barcode_type is string && data.barcode_type.size() <= 50) ) &&
+             ( !('qr_size' in data) || (data.qr_size is number) );
+    }
+
+    match /codes/{codeId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(codeId) && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(codeId) && 
+                       isValidCode(incoming()) && 
+                       incoming().createdAt == request.time.toMillis() &&
+                       incoming().updatedAt == request.time.toMillis();
+      allow update: if isSignedIn() && isValidId(codeId) && 
+                       existing().userId == request.auth.uid &&
+                       isValidCode(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt == request.time.toMillis() &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'qr_content', 'barcode_content', 'barcode_type', 'qr_size', 'updatedAt']);
+    }
+  }
+}

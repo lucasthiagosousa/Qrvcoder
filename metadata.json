@@ -1,0 +1,6 @@
+{
+  "name": "Gerador de Códigos",
+  "description": "Sistema local para geração acelerada de QR Codes e Códigos de Barras.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
